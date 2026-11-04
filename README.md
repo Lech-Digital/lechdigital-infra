@@ -18,7 +18,7 @@ graph LR
 
 | What | Where |
 |---|---|
-| The server | Hetzner Cloud `lechdigital-prod` (CX22-class, 4 GB, nbg1), 167.233.145.128; SSH alias `lechdigital-prod` |
+| The server | Hetzner Cloud `lechdigital-prod` (cx23: 2 cores, 4 GB, 40 GB disk, nbg1), 167.233.145.128; SSH alias `lechdigital-prod` |
 | The edge | `edge/`: `compose.yml`, `Caddyfile`, one `sites/<project>.caddy` per project; on the server `/opt/lechdigital-edge` |
 | A project | `/opt/<project>`: its `deploy/docker-compose.prod.yml` and `.env` (secrets, created on the server, never in git) |
 | Host chores | `host/`: the weekly Docker build-cache clean-up, the `deploy` user |
