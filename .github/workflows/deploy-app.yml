@@ -86,8 +86,10 @@ jobs:
         run: |
           ssh prod "mkdir -p /opt/${{ inputs.app }}/deploy"
           scp "${{ inputs.compose }}" "prod:/opt/${{ inputs.app }}/deploy/docker-compose.prod.yml"
-          ssh prod "cd /opt/${{ inputs.app }} && IMAGE_TAG=${{ steps.sha.outputs.short }} GIT_SHA=${{ steps.sha.outputs.short }} \
-            docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --no-build"
+          # --env-file only where the project keeps its secrets in .env (some load their own file with env_file).
+          ssh prod "cd /opt/${{ inputs.app }} && ef=''; [ -f .env ] && ef='--env-file .env'; \
+            IMAGE_TAG=${{ steps.sha.outputs.short }} GIT_SHA=${{ steps.sha.outputs.short }} \
+            docker compose \$ef -f deploy/docker-compose.prod.yml up -d --no-build"
 
       - name: Check its health
         run: |
@@ -100,7 +102,7 @@ jobs:
             fi
           done
           echo "::error::${{ inputs.health-url }} did not report ${{ steps.sha.outputs.short }}. Last answer: ${body:-none}"
-          ssh prod "cd /opt/${{ inputs.app }} && docker compose --env-file .env -f deploy/docker-compose.prod.yml logs --tail 40"
+          ssh prod "cd /opt/${{ inputs.app }} && ef=''; [ -f .env ] && ef='--env-file .env'; docker compose \$ef -f deploy/docker-compose.prod.yml logs --tail 40"
           exit 1
 
       - name: Keep the last three images
