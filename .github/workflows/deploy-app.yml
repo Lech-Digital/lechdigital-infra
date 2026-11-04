@@ -21,9 +21,13 @@ on:
         required: true
         type: string
       health-url:
-        description: Checked after the deploy; its body must contain the short commit.
+        description: Checked after the deploy; its body must contain the short commit (see health-reports-commit).
         required: true
         type: string
+      health-reports-commit:
+        description: False for a project whose health does not report its commit yet; then an HTTP 200 is enough.
+        type: boolean
+        default: true
       dockerfile:
         type: string
         default: Dockerfile
@@ -89,8 +93,11 @@ jobs:
         run: |
           for _ in $(seq 1 45); do
             sleep 2
-            body="$(curl -sf -m 10 "${{ inputs.health-url }}" || true)"
-            if grep -q "${{ steps.sha.outputs.short }}" <<< "$body"; then echo "Healthy: $body"; exit 0; fi
+            if body="$(curl -sf -m 10 "${{ inputs.health-url }}")"; then
+              if [ "${{ inputs.health-reports-commit }}" != "true" ] || grep -q "${{ steps.sha.outputs.short }}" <<< "$body"; then
+                echo "Healthy: $body"; exit 0
+              fi
+            fi
           done
           echo "::error::${{ inputs.health-url }} did not report ${{ steps.sha.outputs.short }}. Last answer: ${body:-none}"
           ssh prod "cd /opt/${{ inputs.app }} && docker compose --env-file .env -f deploy/docker-compose.prod.yml logs --tail 40"
