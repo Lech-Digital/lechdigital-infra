@@ -16,7 +16,8 @@
    - the image as `example-api:${IMAGE_TAG:-latest}`, so a deploy can pick an exact commit;
    - the public container on the external network `lechdigital_edge`, databases on a private `internal: true` network;
    - a `mem_limit` on every container: the host has 4 GB for everything;
-   - a `/health` endpoint that reports the commit (the `GIT_SHA` build argument).
+   - a `/health` endpoint that reports the commit (the `GIT_SHA` build argument); until it does, call the deploy with
+     `health-reports-commit: false` and an HTTP 200 is enough.
 4. **Secrets**: create `/opt/<project>/.env` on the server (generate values there), `chown -R deploy:deploy /opt/<project>`.
 5. **Deploy workflow** in the project repository, `.github/workflows/deploy.yml`:
 
