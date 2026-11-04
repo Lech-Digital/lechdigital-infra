@@ -1,9 +1,4 @@
 # Coo: the backend (sync, sign-in, Advisor, billing, App Links).
 api.coo.lechdigital.nl {
-	# TEMPORARY (2026-11-04): debugging "couldn't reach the Advisor". Records client IPs: remove once fixed.
-	log {
-		output stdout
-		format json
-	}
 	reverse_proxy coo-api:8080
 }
