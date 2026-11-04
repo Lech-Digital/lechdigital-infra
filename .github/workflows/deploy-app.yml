@@ -74,10 +74,20 @@ jobs:
           printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
           printf 'Host prod\n  HostName %s\n  User deploy\n  IdentityFile ~/.ssh/deploy\n  IdentitiesOnly yes\n' "${{ inputs.host }}" > ~/.ssh/config
 
+      # GitHub's machines start empty: the layers (NuGet restore above all) are kept in GitHub's cache between runs, per
+      # project, so a deploy rebuilds only what changed, as the server's own cache did for the Mac's scripts.
+      - uses: docker/setup-buildx-action@v3
+
       - name: Build the image
-        run: |
-          docker build --build-arg GIT_SHA=${{ steps.sha.outputs.short }} \
-            -f "${{ inputs.dockerfile }}" -t "${{ inputs.image }}:${{ steps.sha.outputs.short }}" "${{ inputs.context }}"
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          build-args: GIT_SHA=${{ steps.sha.outputs.short }}
+          tags: ${{ inputs.image }}:${{ steps.sha.outputs.short }}
+          load: true
+          cache-from: type=gha,scope=${{ inputs.app }}
+          cache-to: type=gha,scope=${{ inputs.app }},mode=max
 
       - name: Send it to the server
         run: docker save "${{ inputs.image }}:${{ steps.sha.outputs.short }}" | gzip -1 | ssh prod 'gunzip | docker load'
