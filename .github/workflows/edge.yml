@@ -1,5 +1,5 @@
-# The edge (Caddy). Every push and PR validates the Caddyfile; "Run workflow" deploys it, and Caddy reloads in place
-# (no dropped connections, no new certificates).
+# The edge (Caddy). Every PR validates the Caddyfile; a push to main validates and deploys it (or "Run workflow"), and
+# Caddy reloads in place (no dropped connections, no new certificates). Work on a branch; merging is the approval.
 name: Edge
 
 on:
@@ -25,7 +25,7 @@ jobs:
 
   deploy:
     needs: validate
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     concurrency: edge
     steps:

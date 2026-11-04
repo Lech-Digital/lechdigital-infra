@@ -22,7 +22,10 @@
 
    ```yaml
    name: Deploy (production)
-   on: workflow_dispatch
+   on:
+     push:
+       branches: [main]
+     workflow_dispatch:
    jobs:
      deploy:
        uses: Lech-Digital/lechdigital-infra/.github/workflows/deploy-app.yml@main

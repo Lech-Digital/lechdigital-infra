@@ -1,6 +1,6 @@
-# Deploys one project to lechdigital-prod. Called by each project's own "Deploy (production)" workflow, which runs only
-# when someone presses "Run workflow": the one-click approval (environment reviewers need GitHub Enterprise for private
-# repositories, so the button is the gate).
+# Deploys one project to lechdigital-prod. Called by each project's own "Deploy (production)" workflow, which runs on
+# every push to main (after the project's tests) and on "Run workflow". Work happens on branches; merging to main is the
+# approval (owner, 2026-11-04).
 #
 # The image is built here, not on the server (a 4 GB host and a 14 GB build cache), and streamed over SSH: no registry,
 # no registry quota. It is tagged with the commit; the server keeps the last three for a rollback.
