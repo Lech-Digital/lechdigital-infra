@@ -1,0 +1,4 @@
+# CoreChoice: the AI backend.
+api.corechoice.lechdigital.nl {
+	reverse_proxy corechoice-api:8080
+}

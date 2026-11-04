@@ -1,0 +1,4 @@
+# Cult of Comfort: the game server.
+api.cultofcomfort.lechdigital.nl {
+	reverse_proxy cultofcomfort-api:8080
+}

@@ -1,0 +1,5 @@
+# The one ingress of lechdigital-prod: automatic HTTPS (Let's Encrypt) for every project on the host.
+# Each project's routes live in sites/<project>.caddy. Upstreams are CONTAINER names, never compose service names:
+# Compose publishes service names as DNS aliases on the shared network, and a generic "web" once sent Coldstart's
+# traffic to PurePrep. Container names are unique per host.
+import sites/*.caddy

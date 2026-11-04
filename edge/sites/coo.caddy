@@ -1,0 +1,4 @@
+# Coo: the backend (sync, sign-in, Advisor, billing, App Links).
+api.coo.lechdigital.nl {
+	reverse_proxy coo-api:8080
+}

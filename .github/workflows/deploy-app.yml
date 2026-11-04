@@ -1,0 +1,103 @@
+# Deploys one project to lechdigital-prod. Called by each project's own "Deploy (production)" workflow, which runs only
+# when someone presses "Run workflow": the one-click approval (environment reviewers need GitHub Enterprise for private
+# repositories, so the button is the gate).
+#
+# The image is built here, not on the server (a 4 GB host and a 14 GB build cache), and streamed over SSH: no registry,
+# no registry quota. It is tagged with the commit; the server keeps the last three for a rollback.
+#
+# The project's compose file must name its image `<image>:${IMAGE_TAG:-latest}`, join the `lechdigital_edge` network,
+# and read its secrets from /opt/<app>/.env, which lives only on the server.
+name: Deploy app
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: The project's folder on the server, /opt/<app>.
+        required: true
+        type: string
+      image:
+        description: The image name in the compose file, without a tag (coo-api).
+        required: true
+        type: string
+      health-url:
+        description: Checked after the deploy; its body must contain the short commit.
+        required: true
+        type: string
+      dockerfile:
+        type: string
+        default: Dockerfile
+      context:
+        type: string
+        default: .
+      compose:
+        description: The compose file in the calling repository; copied to /opt/<app>/deploy/docker-compose.prod.yml.
+        type: string
+        default: deploy/docker-compose.prod.yml
+      host:
+        type: string
+        default: 167.233.145.128
+    secrets:
+      DEPLOY_SSH_KEY:
+        required: true
+      DEPLOY_KNOWN_HOSTS:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.app }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ inputs.app }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The commit
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: SSH to the server
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
+          printf 'Host prod\n  HostName %s\n  User deploy\n  IdentityFile ~/.ssh/deploy\n  IdentitiesOnly yes\n' "${{ inputs.host }}" > ~/.ssh/config
+
+      - name: Build the image
+        run: |
+          docker build --build-arg GIT_SHA=${{ steps.sha.outputs.short }} \
+            -f "${{ inputs.dockerfile }}" -t "${{ inputs.image }}:${{ steps.sha.outputs.short }}" "${{ inputs.context }}"
+
+      - name: Send it to the server
+        run: docker save "${{ inputs.image }}:${{ steps.sha.outputs.short }}" | gzip -1 | ssh prod 'gunzip | docker load'
+
+      - name: Start it
+        run: |
+          ssh prod "mkdir -p /opt/${{ inputs.app }}/deploy"
+          scp "${{ inputs.compose }}" "prod:/opt/${{ inputs.app }}/deploy/docker-compose.prod.yml"
+          ssh prod "cd /opt/${{ inputs.app }} && IMAGE_TAG=${{ steps.sha.outputs.short }} GIT_SHA=${{ steps.sha.outputs.short }} \
+            docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --no-build"
+
+      - name: Check its health
+        run: |
+          for _ in $(seq 1 45); do
+            sleep 2
+            body="$(curl -sf -m 10 "${{ inputs.health-url }}" || true)"
+            if grep -q "${{ steps.sha.outputs.short }}" <<< "$body"; then echo "Healthy: $body"; exit 0; fi
+          done
+          echo "::error::${{ inputs.health-url }} did not report ${{ steps.sha.outputs.short }}. Last answer: ${body:-none}"
+          ssh prod "cd /opt/${{ inputs.app }} && docker compose --env-file .env -f deploy/docker-compose.prod.yml logs --tail 40"
+          exit 1
+
+      - name: Keep the last three images
+        if: success()
+        run: |
+          ssh prod "docker images '${{ inputs.image }}' --format '{{.Tag}}' | grep -v -x -e latest -e '${{ steps.sha.outputs.short }}' | tail -n +3 \
+            | xargs -r -I{} docker rmi '${{ inputs.image }}:{}' || true"

@@ -1,0 +1,9 @@
+# PurePrep: the AI backend, and the marketing site + privacy policy from the same container (the waitlist form posts
+# same-origin to /api/waitlist, so no CORS).
+api.pureprep.lechdigital.nl {
+	reverse_proxy pureprep-web:8080
+}
+
+pureprep.lechdigital.nl {
+	reverse_proxy pureprep-web:8080
+}

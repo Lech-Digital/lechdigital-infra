@@ -1,0 +1,12 @@
+# Coldstart (lead-engine): the web app, www redirect, and Umami analytics (cookieless, first-party).
+getcoldstart.nl {
+	reverse_proxy coldstart-web-1:8080
+}
+
+www.getcoldstart.nl {
+	redir https://getcoldstart.nl{uri} permanent
+}
+
+stats.getcoldstart.nl {
+	reverse_proxy coldstart-umami-1:3000
+}
