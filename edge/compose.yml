@@ -1,8 +1,6 @@
 # The edge of lechdigital-prod: one Caddy for every project on the host.
 #
-# Projects join the `lechdigital_edge` network and Caddy reaches them by container name. During the move from the
-# Coldstart-owned Caddy, Caddy is on `coldstart_default` too, so stacks not moved yet keep working; once every stack
-# has moved, that network goes from here (docs/migration.md).
+# Projects join the `lechdigital_edge` network and Caddy reaches them by container name.
 #
 # The certificates stay in Coldstart's old volume (external), so the swap issues nothing new from Let's Encrypt.
 name: lechdigital-edge
@@ -24,14 +22,11 @@ services:
       - caddy-config:/config
     networks:
       - lechdigital_edge
-      - coldstart_default
     mem_limit: 128m
 
 networks:
   lechdigital_edge:
     name: lechdigital_edge
-  coldstart_default:
-    external: true
 
 volumes:
   caddy-data:
