@@ -58,7 +58,7 @@ jobs:
       group: deploy-${{ inputs.app }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: The commit
         id: sha
