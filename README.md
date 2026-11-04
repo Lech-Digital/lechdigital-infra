@@ -25,16 +25,15 @@ graph LR
 
 ## Deploying
 
-Nothing reaches production on a push. Each project's **Deploy (production)** workflow builds and tests on every run,
-and runs only when someone presses **Run workflow** (Actions tab, or the GitHub mobile app): the one-click approval for
-every project. It calls `deploy-app.yml` here, which builds the image on GitHub, streams it to the server over SSH, starts
+**A push to `main` deploys.** Work happens on branches; merging to `main` is the approval. Each project's
+**Deploy (production)** workflow runs its tests, then (or on **Run workflow**, to redeploy) calls `deploy-app.yml` here, which builds the image on GitHub, streams it to the server over SSH, starts
 it with the project's compose file and waits until the project's health URL reports the commit. The server keeps the
 last three images of each project.
 
 **Rollback:** run the project's deploy workflow on the previous commit (Run workflow → choose the branch or tag), or on
 the server: `cd /opt/<project> && IMAGE_TAG=<old sha> docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --no-build`.
 
-The edge has its own workflow (`Edge`): every push validates the Caddyfile; Run workflow copies it to the server and
+The edge has its own workflow (`Edge`): a PR validates the Caddyfile; a push to `main` also copies it to the server and
 reloads Caddy in place.
 
 ## Secrets
