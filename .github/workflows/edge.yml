@@ -46,7 +46,7 @@ jobs:
             echo "::warning::The edge is not cut over yet (./edge/cutover.sh --confirm); nothing deployed."
             exit 0
           fi
-          rsync -az --delete edge/ prod:/opt/lechdigital-edge/
+          rsync -rlptz --delete edge/ prod:/opt/lechdigital-edge/
           ssh prod 'cd /opt/lechdigital-edge && docker compose up -d && docker exec lechdigital-caddy caddy reload --config /etc/caddy/Caddyfile'
       - name: Every site answers
         run: |

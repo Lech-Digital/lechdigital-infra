@@ -27,7 +27,8 @@ check() { for h in $sites; do printf '  %-36s %s\n' "$h" "$(curl -s -o /dev/null
 
 echo "==> Before"; check
 ssh "$HOST" 'mkdir -p /opt/lechdigital-edge'
-rsync -az --delete "$ROOT/edge/" "$HOST:/opt/lechdigital-edge/"
+rsync -rlptz --delete "$ROOT/edge/" "$HOST:/opt/lechdigital-edge/"
+ssh "$HOST" "id deploy >/dev/null 2>&1 && chown -R deploy:deploy /opt/lechdigital-edge || true"
 ssh "$HOST" 'set -e; cd /opt/lechdigital-edge && docker compose pull -q
   docker update --restart=no coldstart-caddy-1 >/dev/null
   docker stop coldstart-caddy-1 >/dev/null
