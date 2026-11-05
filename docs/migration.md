@@ -9,24 +9,17 @@ takes over the edge; each step keeps every site up.
 
 - 2026-11-04: the server renamed `ubuntu-4gb-nbg1-1` → `lechdigital-prod` (Hetzner and hostname); SSH alias
   `lechdigital-prod` (the old `coldstart-prod` still works).
-- 2026-11-04: PurePrep and CoreChoice moved to the Lech-Digital organisation (Coo and Cult of Comfort were there).
+- 2026-11-04: every project's repository in the Lech-Digital organisation; all public.
+- 2026-11-04: the `deploy` user; the edge cut over (`lechdigital-caddy`, the certificates kept); every public container
+  on `lechdigital_edge`; the edge off `coldstart_default`, which is now only Coldstart's own private network.
+- 2026-11-04: Coldstart's compose without its Caddy (lead-engine #1).
+- 2026-11-04: Coo, PurePrep, CoreChoice and Cult of Comfort deploy from GitHub on every push to `main`
+  (`deploy-app.yml`); Coldstart is not in use and has no deploy workflow.
 
-## To do, in order
+## Left
 
-1. **lead-engine (Coldstart) to Lech-Digital**: the transfer stalled on GitHub's side; retry in Settings → Transfer.
-2. **The deploy user**: `ssh-keygen -t ed25519 -N '' -C lechdigital-deploy -f ~/.ssh/lechdigital_deploy_ed25519`, then
-   `./host/setup-deploy-user.sh ~/.ssh/lechdigital_deploy_ed25519.pub coo pureprep corechoice cultofcomfort coldstart`.
-3. **The edge**: `./edge/cutover.sh --confirm` (a few seconds of HTTPS down; it compares every site before and after;
-   `--rollback` undoes it). From then on Caddy's config is this repository's.
-4. **Coldstart**: remove the `caddy` service and the Caddyfile from lead-engine's `docker-compose.prod.yml` (otherwise a
-   Coldstart deploy fights the edge for ports 80 and 443), then `docker rm coldstart-caddy-1` on the server.
-5. **Each project onto `lechdigital_edge` and the deploy workflow**, one at a time: Coo, PurePrep, CoreChoice, Cult of
-   Comfort, Coldstart. In its compose file, the public container's network `coldstart_default` → `lechdigital_edge`
-   (external), the image tagged `${IMAGE_TAG:-latest}`; add `.github/workflows/deploy.yml` and the two secrets; deploy
-   with Run workflow; check its site.
-6. **Drop `coldstart_default`**: once no container but the Caddy is on it, remove it from `edge/compose.yml`, deploy
-   the edge, and `docker network rm coldstart_default`.
-7. **The weekly cache clean-up** from here: copy `host/docker-cache-gc.*` (it is installed already, from lead-engine).
+- `docker rm coldstart-caddy-1` on the server: the old Caddy, stopped and kept for a rollback.
+- The weekly build-cache clean-up is still the copy lead-engine installed; `host/docker-cache-gc.*` here is the same.
 
 ## Later
 
